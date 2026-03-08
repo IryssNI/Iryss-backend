@@ -51,4 +51,30 @@ Respond ONLY with valid JSON in this exact format:
   return { sentiment: parsed.sentiment, summary: parsed.summary };
 }
 
-module.exports = { analyseReply };
+/**
+ * Generates a conversational AI reply on behalf of the practice.
+ * @param {string} practiceName
+ * @param {Array<{role: 'user'|'assistant', content: string}>} history - chronological conversation history
+ * @param {string} currentMessage - the patient's latest message
+ * @returns {string} AI-generated reply
+ */
+async function generateReply(practiceName, history, currentMessage) {
+  const openai = getClient();
+
+  const systemPrompt = `You are a friendly, helpful assistant for ${practiceName}, an independent opticians. You help patients with contact lens reorders, booking appointments, answering questions about eye care, and general queries. You are warm, concise and professional. Never make up clinical information. If a patient has an urgent eye health concern, always advise them to call the practice directly or go to A&E. Sign off messages naturally — never say you are an AI.`;
+
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    temperature: 0.7,
+    max_tokens: 300,
+    messages: [
+      { role: 'system', content: systemPrompt },
+      ...history,
+      { role: 'user', content: currentMessage },
+    ],
+  });
+
+  return response.choices[0].message.content.trim();
+}
+
+module.exports = { analyseReply, generateReply };
