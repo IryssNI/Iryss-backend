@@ -11,14 +11,13 @@ function getClient() {
 }
 
 function buildMessage(patient, practiceName) {
-  const senderName = practiceName;
-  const link = process.env.APP_URL || 'https://iryss.co.uk';
+  const firstName = patient.name.split(' ')[0];
 
   if (patient.patient_type === 'contact_lens') {
-    return `Hi ${patient.name.split(' ')[0]}, it's ${senderName}. We noticed you might be due a contact lens reorder — tap here to get in touch: ${link}`;
+    return `Hi ${firstName}, it's ${practiceName}. We noticed you haven't reordered your contact lenses lately — would you like to? Reply here or give us a call and we'll sort it for you.`;
   }
 
-  return `Hi ${patient.name.split(' ')[0]}, it's ${senderName}. We wanted to check in — it's been a while since your last visit. Reply to this message or call us to book.`;
+  return `Hi ${firstName}, it's ${practiceName}. We noticed it's been a while since your last visit — would you like to book in? Reply here or give us a call.`;
 }
 
 /**
