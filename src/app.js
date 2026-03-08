@@ -11,6 +11,7 @@ const dashboardRoutes = require('./routes/dashboard');
 const alertRoutes = require('./routes/alerts');
 const settingsRoutes = require('./routes/settings');
 const webhookRoutes = require('./routes/webhooks');
+const messagesRoutes = require('./routes/messages');
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use('/api/patients', auth, patientRoutes);
 app.use('/api/dashboard', auth, dashboardRoutes);
 app.use('/api/alerts', auth, alertRoutes);
 app.use('/api/settings', auth, settingsRoutes);
+app.use('/api/messages', auth, messagesRoutes);
 
 // 404
 app.use((req, res) => {
