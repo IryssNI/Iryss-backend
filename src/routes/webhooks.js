@@ -25,7 +25,7 @@ router.post('/twilio/inbound', express.urlencoded({ extended: false }), async (r
       }
     }
 
-    const fromPhone = req.body.From;
+    const fromPhone = (req.body.From || '').replace(/^whatsapp:/, '');
     const messageText = req.body.Body;
 
     if (!fromPhone || !messageText) {
