@@ -31,11 +31,13 @@ router.post('/twilio/inbound', express.urlencoded({ extended: false }), async (r
       return res.type('text/xml').send('<Response></Response>');
     }
 
-    // Find patient by phone number
+    // Load full patient record
     const patientResult = await db.query(
-      `SELECT p.id, p.practice_id, p.name
-       FROM patients p
-       WHERE p.phone = $1
+      `SELECT id, practice_id, name, phone, patient_type,
+              last_reorder_date, last_appointment_date, days_since_reorder,
+              risk_status, risk_score
+       FROM patients
+       WHERE phone = $1
        LIMIT 1`,
       [fromPhone]
     );
@@ -48,7 +50,7 @@ router.post('/twilio/inbound', express.urlencoded({ extended: false }), async (r
 
     // Load practice details
     const practiceResult = await db.query(
-      'SELECT id, name, email FROM practices WHERE id = $1',
+      'SELECT id, name, email, sms_sender_name FROM practices WHERE id = $1',
       [patient.practice_id]
     );
     const practice = practiceResult.rows[0];
@@ -77,22 +79,27 @@ router.post('/twilio/inbound', express.urlencoded({ extended: false }), async (r
     );
 
     // Run sentiment analysis and AI reply generation in parallel
-    let sentiment = null;
-    let summary = null;
-    let aiReply = null;
-
     const [sentimentResult, replyResult] = await Promise.allSettled([
       analyseReply(messageText),
-      generateReply(practice.name, conversationHistory, messageText),
+      generateReply(practice, patient, conversationHistory, messageText),
     ]);
 
+    // Handle sentiment
+    let sentiment = null;
+    let summary = null;
     if (sentimentResult.status === 'fulfilled') {
       sentiment = sentimentResult.value.sentiment;
       summary = sentimentResult.value.summary;
     }
 
+    // Handle AI reply
+    let aiReply = null;
+    let bookAppointment = null;
+    let saveFeedback = null;
     if (replyResult.status === 'fulfilled') {
-      aiReply = replyResult.value;
+      aiReply = replyResult.value.reply;
+      bookAppointment = replyResult.value.book_appointment;
+      saveFeedback = replyResult.value.save_feedback;
     }
 
     // Update inbound message with sentiment
@@ -120,7 +127,6 @@ router.post('/twilio/inbound', express.urlencoded({ extended: false }), async (r
          VALUES ($1, $2, 'urgent_reply')`,
         [patient.id, patient.practice_id]
       );
-
       try {
         await sendUrgentAlert(practice, patient.name, summary || 'Urgent message received');
       } catch {
@@ -128,7 +134,25 @@ router.post('/twilio/inbound', express.urlencoded({ extended: false }), async (r
       }
     }
 
-    // Send AI reply via Twilio WhatsApp and save to messages table
+    // Save appointment if AI confirmed a booking
+    if (bookAppointment && bookAppointment.date && bookAppointment.time) {
+      await db.query(
+        `INSERT INTO appointments (patient_id, practice_id, proposed_date, proposed_time, status)
+         VALUES ($1, $2, $3, $4, 'pending')`,
+        [patient.id, patient.practice_id, bookAppointment.date, bookAppointment.time]
+      );
+    }
+
+    // Save feedback if AI gathered meaningful feedback
+    if (saveFeedback) {
+      await db.query(
+        `INSERT INTO feedback (patient_id, practice_id, feedback_text, sentiment)
+         VALUES ($1, $2, $3, $4)`,
+        [patient.id, patient.practice_id, saveFeedback, sentiment]
+      );
+    }
+
+    // Send AI reply via Twilio WhatsApp and log as outbound message
     if (aiReply) {
       const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
