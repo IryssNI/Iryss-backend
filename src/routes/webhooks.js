@@ -10,8 +10,8 @@ const router = express.Router();
 // Twilio sends application/x-www-form-urlencoded
 router.post('/twilio/inbound', express.urlencoded({ extended: false }), async (req, res) => {
   try {
-    // Validate Twilio signature in production
-    if (process.env.NODE_ENV === 'production') {
+    // Validate Twilio signature when explicitly enabled
+    if (process.env.TWILIO_VALIDATE_SIGNATURE === 'true') {
       const signature = req.headers['x-twilio-signature'];
       const url = `${process.env.APP_URL}/webhooks/twilio/inbound`;
       const valid = twilio.validateRequest(
