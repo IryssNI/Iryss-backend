@@ -15,7 +15,17 @@ const webhookRoutes = require('./routes/webhooks');
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+  origin: [
+    'https://dazzling-kheer-6c6a8c.netlify.app',
+    'http://localhost:5173',
+    'http://localhost:3000',
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
+}));
+app.options('*', cors());
 app.use(express.json());
 
 // Public routes
