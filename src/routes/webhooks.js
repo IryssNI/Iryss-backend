@@ -104,6 +104,9 @@ router.post('/twilio/inbound', express.urlencoded({ extended: false }), async (r
       aiReply = replyResult.value.reply;
       bookAppointment = replyResult.value.book_appointment;
       saveFeedback = replyResult.value.save_feedback;
+      console.log(`[webhook] aiReply value: ${JSON.stringify(aiReply)}`);
+    } else {
+      console.error(`[webhook] generateReply rejected:`, replyResult.reason?.message, replyResult.reason?.stack);
     }
 
     // Update inbound message with sentiment
@@ -157,8 +160,8 @@ router.post('/twilio/inbound', express.urlencoded({ extended: false }), async (r
     }
 
     // Send AI reply via Twilio WhatsApp and log as outbound message
+    console.log(`[webhook] aiReply truthy: ${!!aiReply}, length: ${aiReply ? aiReply.length : 0}`);
     if (aiReply) {
-      console.log(`[webhook] OpenAI responded with ${aiReply.length} chars`);
       const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
       console.log(`[webhook] Sending reply to ${fromPhone}`);
