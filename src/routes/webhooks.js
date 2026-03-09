@@ -27,6 +27,8 @@ router.post('/twilio/inbound', express.urlencoded({ extended: false }), async (r
     const fromPhone = (req.body.From || '').replace(/^whatsapp:/, '');
     const messageText = (req.body.Body || '').trim();
 
+    console.log(`[webhook] Inbound message received from ${fromPhone}`);
+
     if (!fromPhone || !messageText) {
       return res.type('text/xml').send('<Response></Response>');
     }
@@ -79,10 +81,12 @@ router.post('/twilio/inbound', express.urlencoded({ extended: false }), async (r
     );
 
     // Run sentiment analysis and AI reply generation in parallel
+    console.log(`[webhook] Calling OpenAI for patient ${patient.name}`);
     const [sentimentResult, replyResult] = await Promise.allSettled([
       analyseReply(messageText),
       generateReply(practice, patient, conversationHistory, messageText),
     ]);
+    console.log(`[webhook] OpenAI responded — sentiment: ${sentimentResult.status}, reply: ${replyResult.status}`);
 
     // Handle sentiment
     let sentiment = null;
@@ -154,8 +158,10 @@ router.post('/twilio/inbound', express.urlencoded({ extended: false }), async (r
 
     // Send AI reply via Twilio WhatsApp and log as outbound message
     if (aiReply) {
+      console.log(`[webhook] OpenAI responded with ${aiReply.length} chars`);
       const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
+      console.log(`[webhook] Sending reply to ${fromPhone}`);
       await twilioClient.messages.create({
         from: `whatsapp:${process.env.TWILIO_PHONE_NUMBER}`,
         to: `whatsapp:${fromPhone}`,
@@ -170,7 +176,8 @@ router.post('/twilio/inbound', express.urlencoded({ extended: false }), async (r
     }
 
     res.type('text/xml').send('<Response></Response>');
-  } catch {
+  } catch (err) {
+    console.error(`[webhook] ERROR: ${err.message}`, err.stack);
     res.type('text/xml').send('<Response></Response>');
   }
 });
