@@ -16,7 +16,8 @@ const messagesRoutes = require('./routes/messages');
 const app = express();
 
 app.use(helmet());
-app.use(cors({
+
+const corsOptions = {
   origin: [
     'https://dazzling-kheer-6c6a8c.netlify.app',
     'http://localhost:5173',
@@ -25,8 +26,9 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
-}));
-app.options('*', cors());
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json());
 
 // Public routes
@@ -42,6 +44,12 @@ app.use('/api/dashboard', auth, dashboardRoutes);
 app.use('/api/alerts', auth, alertRoutes);
 app.use('/api/settings', auth, settingsRoutes);
 app.use('/api/messages', auth, messagesRoutes);
+
+// Confirm key routes are registered
+console.log('[Routes] POST /api/patients/:id/message — registered');
+console.log('[Routes] POST /api/patients/:id/send-checkin — registered');
+console.log('[Routes] GET  /api/dashboard/at-risk — registered');
+console.log('[Routes] GET  /api/messages/sent-this-week — registered');
 
 // 404
 app.use((req, res) => {
