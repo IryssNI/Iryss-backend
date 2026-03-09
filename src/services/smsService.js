@@ -16,24 +16,24 @@ function buildMessage(patient, practiceName) {
   const isHigh = patient.risk_status === 'high';
 
   if (isHigh && isContactLens) {
-    return `Hi ${firstName} 👋\n\nWe just wanted to check in — it's been a little while since you last reordered your contact lenses and we want to make sure you're getting on okay.\n\nWhenever you're ready, just reply to this message and we'll get everything sorted for you.\n\n${practiceName}`;
+    return `Hi ${firstName} 👋\n\nWe just wanted to check in — it's been a little while since your last contact lens order, and we want to make sure you're all set.\n\nWhenever you're ready, just reply to this message and we'll get everything sorted for you.\n\n${practiceName}`;
   }
 
   if (isHigh && !isContactLens) {
-    return `Hi ${firstName} 👋\n\nIt's been a little while since we last saw you at ${practiceName}, and we just wanted to check in.\n\nIf you're due a check-up or have any questions about your eyes or glasses, we're always here. Just reply to this message or give us a call.`;
+    return `Hi ${firstName} 👋\n\nIt's been a little while since we last saw you, and we just wanted to check in and see how you're doing.\n\nIf you'd like to book in for a check-up, just reply here and we'll get you sorted at a time that suits.\n\n${practiceName}`;
   }
 
   if (!isHigh && isContactLens) {
-    return `Hi ${firstName},\n\nJust a gentle heads-up from ${practiceName} — it might be about time to think about reordering your contact lenses.\n\nNo rush at all, but if you'd like us to sort that for you, just reply here and we'll take care of it 😊`;
+    return `Hi ${firstName},\n\nIt might be getting close to time for your next contact lens order — just a gentle heads-up from us.\n\nNo rush at all, but whenever you're ready, just reply here and we'll get it sorted 😊\n\n${practiceName}`;
   }
 
   // medium, general
-  return `Hi ${firstName},\n\nJust a friendly note from ${practiceName} — it might be worth thinking about booking a check-up soon.\n\nWhenever suits you, just reply to this message or give us a call and we'll find a time that works.`;
+  return `Hi ${firstName},\n\nWe just wanted to check in — it might be worth thinking about booking your next eye test soon.\n\nWhenever suits you, just reply here and we'll find a time that works.\n\n${practiceName}`;
 }
 
 function buildLowRiskCheckinMessage(patient, practiceName) {
   const firstName = patient.name.split(' ')[0];
-  return `Hi ${firstName} 👋\n\nJust a little hello from everyone at ${practiceName} — we hope you're keeping well.\n\nWe're always here if you ever need anything, whether that's a check-up, a lens reorder, or just a question. No pressure at all — just wanted you to know we're thinking of you.`;
+  return `Hi ${firstName} 👋\n\nJust a little hello from everyone at ${practiceName} — we hope you're keeping well.\n\nWe're always here whenever you need anything, whether that's a check-up, a lens reorder, or just a question.\n\nTake care 😊`;
 }
 
 /**
