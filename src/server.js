@@ -16,22 +16,30 @@ if (missingOptional.length > 0) {
 
 const app = require('./app');
 const { initCronJobs } = require('./jobs/cronJobs');
+const { runMigrations } = require('./migrations/run-migrations');
 
 const PORT = process.env.PORT || 3000;
-
-const server = app.listen(PORT, () => {
-  console.log(`[Server] Iryss backend running on port ${PORT} (${process.env.NODE_ENV || 'development'})`);
-  initCronJobs();
-});
-
-process.on('SIGTERM', () => {
-  console.log('[Server] SIGTERM received, shutting down gracefully');
-  server.close(() => {
-    console.log('[Server] Closed');
-    process.exit(0);
-  });
-});
 
 process.on('unhandledRejection', (reason) => {
   console.error('[Server] Unhandled rejection:', reason instanceof Error ? reason.message : reason);
 });
+
+runMigrations()
+  .then(() => {
+    const server = app.listen(PORT, () => {
+      console.log(`[Server] Iryss backend running on port ${PORT} (${process.env.NODE_ENV || 'development'})`);
+      initCronJobs();
+    });
+
+    process.on('SIGTERM', () => {
+      console.log('[Server] SIGTERM received, shutting down gracefully');
+      server.close(() => {
+        console.log('[Server] Closed');
+        process.exit(0);
+      });
+    });
+  })
+  .catch((err) => {
+    console.error('[Server] Migration failed, aborting startup:', err.message);
+    process.exit(1);
+  });
