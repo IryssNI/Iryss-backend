@@ -2,7 +2,8 @@ const express = require('express');
 const multer = require('multer');
 const { parse } = require('csv-parse');
 const db = require('../config/database');
-const { sendPatientSMS, sendLowRiskCheckin } = require('../services/smsService');
+const twilio = require('twilio');
+const { sendPatientSMS, buildLowRiskCheckinMessage } = require('../services/smsService');
 
 const router = express.Router();
 const upload = multer({
@@ -194,11 +195,14 @@ router.post('/:id/message', async (req, res, next) => {
 });
 
 // POST /api/patients/:id/send-checkin — manually send a low-risk check-in message
-router.post('/:id/send-checkin', async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const practiceId = req.practice.id;
+router.post('/:id/send-checkin', async (req, res) => {
+  const { id } = req.params;
+  const practiceId = req.practice.id;
+  console.log(`[send-checkin] Hit for patient ${id}, practice ${practiceId}`);
 
+  // 1. Load patient and practice
+  let patient, practice;
+  try {
     const patientResult = await db.query(
       'SELECT id, name, phone, patient_type FROM patients WHERE id = $1 AND practice_id = $2',
       [id, practiceId]
@@ -208,7 +212,7 @@ router.post('/:id/send-checkin', async (req, res, next) => {
       return res.status(404).json({ error: 'Patient not found' });
     }
 
-    const patient = patientResult.rows[0];
+    patient = patientResult.rows[0];
 
     if (!patient.phone) {
       return res.status(400).json({ error: 'Patient has no phone number on record' });
@@ -218,13 +222,41 @@ router.post('/:id/send-checkin', async (req, res, next) => {
       'SELECT id, name, sms_sender_name FROM practices WHERE id = $1',
       [practiceId]
     );
-
-    await sendLowRiskCheckin(patient, practiceResult.rows[0], 'manual_checkin');
-
-    res.json({ success: true, message: 'Check-in sent' });
+    practice = practiceResult.rows[0];
   } catch (err) {
-    next(err);
+    console.error(`[send-checkin] DB lookup failed for patient ${id}:`, err.message);
+    return res.status(500).json({ error: 'Failed to load patient data' });
   }
+
+  // 2. Build message body
+  const messageBody = buildLowRiskCheckinMessage(patient, practice.sms_sender_name || practice.name);
+
+  // 3. Send via Twilio — if this fails, return 500 (message not sent)
+  try {
+    const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    await twilioClient.messages.create({
+      body: messageBody,
+      from: `whatsapp:${process.env.TWILIO_PHONE_NUMBER}`,
+      to: `whatsapp:${patient.phone}`,
+    });
+    console.log(`[send-checkin] WhatsApp sent successfully to patient ${id} (${patient.name})`);
+  } catch (err) {
+    console.error(`[send-checkin] Twilio send failed for patient ${id}:`, err.message);
+    return res.status(500).json({ error: 'Failed to send WhatsApp message' });
+  }
+
+  // 4. Log to messages table — best effort, WhatsApp already sent so don't block the 200
+  try {
+    await db.query(
+      `INSERT INTO messages (patient_id, practice_id, message_body, direction, message_type, sent_at)
+       VALUES ($1, $2, $3, 'outbound', 'manual_checkin', NOW())`,
+      [patient.id, practice.id, messageBody]
+    );
+  } catch (err) {
+    console.error(`[send-checkin] DB log failed for patient ${id} (WhatsApp already sent):`, err.message);
+  }
+
+  return res.status(200).json({ success: true, message: 'Check-in sent' });
 });
 
 module.exports = router;
