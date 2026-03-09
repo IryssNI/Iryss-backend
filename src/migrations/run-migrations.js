@@ -13,6 +13,10 @@ const migrations = [
     name: 'practices.reviews_enabled',
     sql: `ALTER TABLE practices ADD COLUMN IF NOT EXISTS reviews_enabled BOOLEAN DEFAULT true`,
   },
+  {
+    name: 'practices.last_inbox_viewed_at',
+    sql: `ALTER TABLE practices ADD COLUMN IF NOT EXISTS last_inbox_viewed_at TIMESTAMP`,
+  },
 ];
 
 async function runMigrations() {

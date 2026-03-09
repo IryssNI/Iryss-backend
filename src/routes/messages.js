@@ -93,4 +93,42 @@ router.get('/thread/:patientId', async (req, res, next) => {
   }
 });
 
+// GET /api/messages/unread-count
+router.get('/unread-count', async (req, res, next) => {
+  try {
+    const practiceId = req.practice.id;
+
+    const practiceResult = await db.query(
+      'SELECT last_inbox_viewed_at FROM practices WHERE id = $1',
+      [practiceId]
+    );
+    const lastViewed = practiceResult.rows[0]?.last_inbox_viewed_at || null;
+
+    const countResult = await db.query(
+      `SELECT COUNT(*) FROM messages
+       WHERE practice_id = $1
+         AND direction = 'inbound'
+         AND ($2::timestamptz IS NULL OR sent_at > $2)`,
+      [practiceId, lastViewed]
+    );
+
+    res.json({ unread_count: parseInt(countResult.rows[0].count, 10) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /api/messages/mark-read
+router.post('/mark-read', async (req, res, next) => {
+  try {
+    await db.query(
+      'UPDATE practices SET last_inbox_viewed_at = NOW() WHERE id = $1',
+      [req.practice.id]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
