@@ -199,15 +199,24 @@ router.post('/:id/message', async (req, res) => {
 
   // 3. Send via Twilio — if this fails, return 500 (message not sent)
   try {
-    const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+
+    console.log(`[send-message] Twilio env check — SID set: ${!!accountSid}, token set: ${!!authToken}, from set: ${!!fromNumber}`);
+
+    const maskedTo = patient.phone.length >= 4 ? `****${patient.phone.slice(-4)}` : '****';
+    console.log(`[send-message] Sending to whatsapp:${maskedTo} from whatsapp:${fromNumber}`);
+
+    const twilioClient = twilio(accountSid, authToken);
     await twilioClient.messages.create({
       body: messageBody,
-      from: `whatsapp:${process.env.TWILIO_PHONE_NUMBER}`,
+      from: `whatsapp:${fromNumber}`,
       to: `whatsapp:${patient.phone}`,
     });
     console.log(`[send-message] WhatsApp sent successfully to patient ${id} (${patient.name})`);
   } catch (err) {
-    console.error(`[send-message] Twilio send failed for patient ${id}:`, err.message, '\n', err.stack);
+    console.error('[send-message] Full error:', err.message, err.stack);
     return res.status(500).json({ error: 'Failed to send WhatsApp message' });
   }
 
