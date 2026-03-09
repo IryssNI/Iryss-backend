@@ -190,7 +190,7 @@ router.post('/:id/message', async (req, res) => {
     );
     practice = practiceResult.rows[0];
   } catch (err) {
-    console.error(`[send-message] DB lookup failed for patient ${id}:`, err.message);
+    console.error(`[send-message] DB lookup failed for patient ${id}:`, err.message, '\n', err.stack);
     return res.status(500).json({ error: 'Failed to load patient data' });
   }
 
@@ -207,7 +207,7 @@ router.post('/:id/message', async (req, res) => {
     });
     console.log(`[send-message] WhatsApp sent successfully to patient ${id} (${patient.name})`);
   } catch (err) {
-    console.error(`[send-message] Twilio send failed for patient ${id}:`, err.message);
+    console.error(`[send-message] Twilio send failed for patient ${id}:`, err.message, '\n', err.stack);
     return res.status(500).json({ error: 'Failed to send WhatsApp message' });
   }
 
@@ -219,7 +219,7 @@ router.post('/:id/message', async (req, res) => {
       [patient.id, practice.id, messageBody]
     );
   } catch (err) {
-    console.error(`[send-message] DB log failed for patient ${id} (WhatsApp already sent):`, err.message);
+    console.error(`[send-message] DB log failed for patient ${id} (WhatsApp already sent):`, err.message, '\n', err.stack);
   }
 
   return res.status(200).json({ success: true });
