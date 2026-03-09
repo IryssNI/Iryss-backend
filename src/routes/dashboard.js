@@ -114,4 +114,70 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+// GET /api/dashboard/at-risk — full list of high+medium risk patients with revenue impact
+router.get('/at-risk', async (req, res, next) => {
+  try {
+    const practiceId = req.practice.id;
+
+    const result = await db.query(
+      `SELECT
+         p.id, p.name, p.phone, p.risk_status, p.days_since_reorder,
+         p.last_appointment_date, p.patient_type,
+         CEIL(COALESCE(p.days_since_reorder, 30) / 30.0) * ${AVG_PATIENT_VALUE} AS revenue_at_risk
+       FROM patients p
+       WHERE p.practice_id = $1
+         AND p.risk_status IN ('high', 'medium')
+       ORDER BY p.risk_score DESC, p.days_since_reorder DESC NULLS LAST`,
+      [practiceId]
+    );
+
+    res.json({ patients: result.rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/dashboard/recovered — patients recovered this month with trigger info
+router.get('/recovered', async (req, res, next) => {
+  try {
+    const practiceId = req.practice.id;
+
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const result = await db.query(
+      `SELECT
+         p.id, p.name,
+         MIN(m.sent_at) AS recovered_at,
+         CASE
+           WHEN EXISTS (
+             SELECT 1 FROM messages im
+             WHERE im.patient_id = p.id AND im.direction = 'inbound'
+               AND im.sentiment = 'positive' AND im.sent_at >= $2
+           ) THEN 'Replied positively'
+           WHEN EXISTS (
+             SELECT 1 FROM appointments a
+             WHERE a.patient_id = p.id AND a.created_at >= $2
+           ) THEN 'Booked appointment'
+           ELSE 'Re-engaged via message'
+         END AS trigger,
+         ${AVG_PATIENT_VALUE} AS revenue_recovered
+       FROM patients p
+       INNER JOIN messages m ON m.patient_id = p.id
+       WHERE p.practice_id = $1
+         AND p.risk_status = 'low'
+         AND m.direction = 'outbound'
+         AND m.sent_at >= $2
+       GROUP BY p.id, p.name
+       ORDER BY MIN(m.sent_at) DESC`,
+      [practiceId, monthStart]
+    );
+
+    res.json({ patients: result.rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
