@@ -293,4 +293,4 @@ async function runLowRiskCheckinCampaign() {
   return { sent, errors };
 }
 
-module.exports = { buildLowRiskCheckinMessage, sendPatientSMS, sendLowRiskCheckin, runSMSCampaign, runLowRiskCheckinCampaign, runReviewRequestCampaign, runReviewFollowupCampaign };
+module.exports = { buildMessage, buildLowRiskCheckinMessage, sendPatientSMS, sendLowRiskCheckin, runSMSCampaign, runLowRiskCheckinCampaign, runReviewRequestCampaign, runReviewFollowupCampaign };
