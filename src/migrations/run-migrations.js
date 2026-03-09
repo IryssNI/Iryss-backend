@@ -17,6 +17,10 @@ const migrations = [
     name: 'practices.last_inbox_viewed_at',
     sql: `ALTER TABLE practices ADD COLUMN IF NOT EXISTS last_inbox_viewed_at TIMESTAMP`,
   },
+  {
+    name: 'alerts.unresolved_unique_index',
+    sql: `CREATE UNIQUE INDEX IF NOT EXISTS alerts_unresolved_unique ON alerts (patient_id, alert_type) WHERE resolved = false`,
+  },
 ];
 
 async function runMigrations() {

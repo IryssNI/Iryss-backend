@@ -131,7 +131,8 @@ router.post('/twilio/inbound', express.urlencoded({ extended: false }), async (r
     if (sentiment === 'urgent') {
       await db.query(
         `INSERT INTO alerts (patient_id, practice_id, alert_type)
-         VALUES ($1, $2, 'urgent_reply')`,
+         VALUES ($1, $2, 'urgent_reply')
+         ON CONFLICT DO NOTHING`,
         [patient.id, patient.practice_id]
       );
       try {
