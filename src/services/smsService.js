@@ -29,8 +29,8 @@ async function sendPatientSMS(patient, practice) {
 
   await client.messages.create({
     body: messageBody,
-    from: process.env.TWILIO_PHONE_NUMBER,
-    to: patient.phone,
+    from: `whatsapp:${process.env.TWILIO_PHONE_NUMBER}`,
+    to: `whatsapp:${patient.phone}`,
   });
 
   await db.query(
