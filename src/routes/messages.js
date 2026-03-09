@@ -41,4 +41,56 @@ router.get('/inbound', async (req, res, next) => {
   }
 });
 
+// GET /api/messages/sent-this-week
+router.get('/sent-this-week', async (req, res, next) => {
+  try {
+    const practiceId = req.practice.id;
+
+    const result = await db.query(
+      `SELECT m.id, m.message_body, m.sent_at, m.patient_id,
+              p.name AS patient_name
+       FROM messages m
+       JOIN patients p ON p.id = m.patient_id
+       WHERE m.direction = 'outbound'
+         AND m.practice_id = $1
+         AND m.sent_at > NOW() - INTERVAL '7 days'
+       ORDER BY m.sent_at DESC`,
+      [practiceId]
+    );
+
+    res.json({ messages: result.rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// GET /api/messages/thread/:patientId
+router.get('/thread/:patientId', async (req, res, next) => {
+  try {
+    const practiceId = req.practice.id;
+    const { patientId } = req.params;
+
+    const patientResult = await db.query(
+      'SELECT id, name FROM patients WHERE id = $1 AND practice_id = $2',
+      [patientId, practiceId]
+    );
+
+    if (patientResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Patient not found' });
+    }
+
+    const messagesResult = await db.query(
+      `SELECT id, message_body, direction, sentiment, sent_at
+       FROM messages
+       WHERE patient_id = $1
+       ORDER BY sent_at ASC`,
+      [patientId]
+    );
+
+    res.json({ patient: patientResult.rows[0], messages: messagesResult.rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
