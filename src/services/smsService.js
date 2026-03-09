@@ -15,16 +15,16 @@ function buildMessage(patient, practiceName) {
   const isHigh = patient.risk_status === 'high';
 
   if (isHigh) {
-    return `Hi ${firstName},\n\nIt's been a little while and we've been thinking about you — we just wanted to check in and see how you're doing.\n\nWhenever you're ready, we're here to help with whatever would be most useful — whether that's an updated eye check, a chat about your prescription, or just a general catch-up about your eye health. Absolutely no pressure at all.\n\nJust reply to us here and we'll take it from there 😊\n\n${practiceName}`;
+    return `Hi ${firstName},\n\nIt's been a little while and we've been thinking about you — we just wanted to check in and see how your eyes have been.\n\nWhenever you're ready, we're here to help with whatever would be most useful — whether that's an updated eye examination, a prescription review, some advice on glasses or contact lenses, or just a general chat about your eye health. Absolutely no pressure at all.\n\nJust reply to us here and we'll take it from there 😊\n\n${practiceName}`;
   }
 
   // medium risk
-  return `Hi ${firstName},\n\nWe just wanted to check in and see how you're getting on with your latest contact lens order.\n\nIt's always worth having an updated prescription to make sure you're in the right lenses — comfort and clarity can shift gradually and it's easy not to notice.\n\nWe're happy to help you review your lenses or pop in for a quick check-up if that would be useful. No pressure at all — just reply to us here whenever suits you 😊\n\n${practiceName}`;
+  return `Hi ${firstName},\n\nHope you're doing well — we just wanted to check in, as it's been a little while since we last saw you.\n\nIt's always good to keep on top of eye health — vision can change gradually and it's easy not to notice. Whether you're in glasses, contact lenses or both, we're here to make sure everything still feels right.\n\nIf you'd like a prescription review or an updated eye examination, we'd love to help — just reply to us here whenever suits you 😊\n\n${practiceName}`;
 }
 
 function buildLowRiskCheckinMessage(patient, practiceName) {
   const firstName = patient.name.split(' ')[0];
-  return `Hi ${firstName},\n\nWe just wanted to check in and see how you're getting on with your new contact lenses.\n\nHopefully comfort is good and you're happy with how you're seeing. If anything feels slightly off — dryness, blurry vision, any discomfort at all — it's always worth a quick chat and we're here to help.\n\nWe're happy to review your lenses or answer any questions, completely no pressure — just reply to us here anytime 😊\n\n${practiceName}`;
+  return `Hi ${firstName},\n\nJust wanted to say hello and see how you're getting on since your last visit with us.\n\nWe're always here if anything feels different — whether it's your vision, comfort, or you just have a question you'd like to talk through.\n\nNo need to wait for your next appointment — just reply to us here anytime 😊\n\n${practiceName}`;
 }
 
 /**
