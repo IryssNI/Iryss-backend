@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/', async (req, res, next) => {
   try {
     const result = await db.query(
-      `SELECT id, name, email, pms_type, sms_sender_name, digest_email_time, created_at
+      `SELECT id, name, email, pms_type, sms_sender_name, digest_email_time, google_review_link, created_at
        FROM practices WHERE id = $1`,
       [req.practice.id]
     );

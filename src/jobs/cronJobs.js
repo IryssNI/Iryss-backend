@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const { runRiskScoring } = require('../services/riskScoring');
-const { runSMSCampaign, runLowRiskCheckinCampaign } = require('../services/smsService');
+const { runSMSCampaign, runLowRiskCheckinCampaign, runReviewRequestCampaign, runReviewFollowupCampaign } = require('../services/smsService');
 const { sendDailyDigest } = require('../services/emailService');
 
 function initCronJobs() {
@@ -34,6 +34,26 @@ function initCronJobs() {
     }
   }, { timezone: 'Europe/London' });
 
+  // Review request campaign — daily at 11:00 (targets yesterday's appointments)
+  cron.schedule('0 11 * * *', async () => {
+    console.log('[Cron] Starting review request campaign');
+    try {
+      await runReviewRequestCampaign();
+    } catch (err) {
+      console.error('[Cron] Review request campaign failed:', err.message);
+    }
+  }, { timezone: 'Europe/London' });
+
+  // Review followup campaign — daily at 14:00 (nudges 48h-old review requests)
+  cron.schedule('0 14 * * *', async () => {
+    console.log('[Cron] Starting review followup campaign');
+    try {
+      await runReviewFollowupCampaign();
+    } catch (err) {
+      console.error('[Cron] Review followup campaign failed:', err.message);
+    }
+  }, { timezone: 'Europe/London' });
+
   // Daily digest email — daily at 18:00
   cron.schedule('0 18 * * *', async () => {
     console.log('[Cron] Sending daily digest');
@@ -44,7 +64,7 @@ function initCronJobs() {
     }
   }, { timezone: 'Europe/London' });
 
-  console.log('[Cron] Jobs scheduled: risk scoring 02:00, SMS campaign 09:00, low-risk check-in 09:00 on 1st, digest 18:00 (Europe/London)');
+  console.log('[Cron] Jobs scheduled: risk scoring 02:00, SMS campaign 09:00, low-risk check-in 09:00 on 1st, review request 11:00, review followup 14:00, digest 18:00 (Europe/London)');
 }
 
 module.exports = { initCronJobs };

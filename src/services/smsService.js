@@ -76,6 +76,137 @@ async function sendLowRiskCheckin(patient, practice, messageType = 'low_risk_che
   );
 }
 
+function buildReviewRequestMessage(patient, practice) {
+  const firstName = patient.name.split(' ')[0];
+  const practiceName = practice.sms_sender_name || practice.name;
+  const reviewLink = practice.google_review_link || '';
+  return `Hi ${firstName} 😊\n\nIt was so lovely to see you yesterday — we hope everything went well with your appointment.\n\nIf you have a moment, we'd really appreciate it if you could leave us a quick Google review. It makes such a difference to a small independent practice like ours.\n\n${reviewLink}\n\nThank you so much — see you next time! 💙\n${practiceName}`;
+}
+
+function buildReviewFollowupMessage(patient, practice) {
+  const firstName = patient.name.split(' ')[0];
+  const practiceName = practice.sms_sender_name || practice.name;
+  const reviewLink = practice.google_review_link || '';
+  return `Hi ${firstName},\n\nJust a gentle reminder from ${practiceName} — if you have 30 seconds to spare, a Google review would mean the world to us. 🙏\n\n${reviewLink}\n\nNo worries at all if not — hope you're keeping well!\n${practiceName}`;
+}
+
+/**
+ * Run daily review request campaign — patients with appointments yesterday
+ * who haven't received a review_request in the last 7 days.
+ */
+async function runReviewRequestCampaign() {
+  const practicesResult = await db.query(
+    `SELECT id, name, sms_sender_name, google_review_link
+     FROM practices
+     WHERE google_review_link IS NOT NULL AND google_review_link != ''`
+  );
+
+  let sent = 0;
+  let errors = 0;
+
+  for (const practice of practicesResult.rows) {
+    const patientsResult = await db.query(
+      `SELECT DISTINCT p.id, p.name, p.phone
+       FROM patients p
+       JOIN appointments a ON a.patient_id = p.id
+       WHERE a.practice_id = $1
+         AND a.proposed_date = CURRENT_DATE - INTERVAL '1 day'
+         AND a.status = 'confirmed'
+         AND p.phone IS NOT NULL
+         AND p.phone != ''
+         AND NOT EXISTS (
+           SELECT 1 FROM messages m
+           WHERE m.patient_id = p.id
+             AND m.message_type = 'review_request'
+             AND m.sent_at > NOW() - INTERVAL '7 days'
+         )`,
+      [practice.id]
+    );
+
+    for (const patient of patientsResult.rows) {
+      try {
+        const client = getClient();
+        const messageBody = buildReviewRequestMessage(patient, practice);
+        await client.messages.create({
+          body: messageBody,
+          from: `whatsapp:${process.env.TWILIO_PHONE_NUMBER}`,
+          to: `whatsapp:${patient.phone}`,
+        });
+        await db.query(
+          `INSERT INTO messages (patient_id, practice_id, message_body, direction, message_type, sent_at)
+           VALUES ($1, $2, $3, 'outbound', 'review_request', NOW())`,
+          [patient.id, practice.id, messageBody]
+        );
+        sent++;
+      } catch {
+        errors++;
+      }
+    }
+  }
+
+  console.log(`[Review Request Campaign] Sent: ${sent}, Errors: ${errors}`);
+  return { sent, errors };
+}
+
+/**
+ * Run daily review followup campaign — patients who received a review_request
+ * 48–72 hours ago and haven't received a review_followup yet.
+ */
+async function runReviewFollowupCampaign() {
+  const practicesResult = await db.query(
+    `SELECT id, name, sms_sender_name, google_review_link
+     FROM practices
+     WHERE google_review_link IS NOT NULL AND google_review_link != ''`
+  );
+
+  let sent = 0;
+  let errors = 0;
+
+  for (const practice of practicesResult.rows) {
+    const patientsResult = await db.query(
+      `SELECT DISTINCT p.id, p.name, p.phone
+       FROM patients p
+       JOIN messages m ON m.patient_id = p.id
+       WHERE m.practice_id = $1
+         AND m.message_type = 'review_request'
+         AND m.direction = 'outbound'
+         AND m.sent_at < NOW() - INTERVAL '48 hours'
+         AND m.sent_at > NOW() - INTERVAL '72 hours'
+         AND p.phone IS NOT NULL
+         AND p.phone != ''
+         AND NOT EXISTS (
+           SELECT 1 FROM messages m2
+           WHERE m2.patient_id = p.id
+             AND m2.message_type = 'review_followup'
+         )`,
+      [practice.id]
+    );
+
+    for (const patient of patientsResult.rows) {
+      try {
+        const client = getClient();
+        const messageBody = buildReviewFollowupMessage(patient, practice);
+        await client.messages.create({
+          body: messageBody,
+          from: `whatsapp:${process.env.TWILIO_PHONE_NUMBER}`,
+          to: `whatsapp:${patient.phone}`,
+        });
+        await db.query(
+          `INSERT INTO messages (patient_id, practice_id, message_body, direction, message_type, sent_at)
+           VALUES ($1, $2, $3, 'outbound', 'review_followup', NOW())`,
+          [patient.id, practice.id, messageBody]
+        );
+        sent++;
+      } catch {
+        errors++;
+      }
+    }
+  }
+
+  console.log(`[Review Followup Campaign] Sent: ${sent}, Errors: ${errors}`);
+  return { sent, errors };
+}
+
 /**
  * Run outbound WhatsApp campaign for all high/medium risk patients
  * who haven't been messaged in 7 days.
@@ -162,4 +293,4 @@ async function runLowRiskCheckinCampaign() {
   return { sent, errors };
 }
 
-module.exports = { buildLowRiskCheckinMessage, sendPatientSMS, sendLowRiskCheckin, runSMSCampaign, runLowRiskCheckinCampaign };
+module.exports = { buildLowRiskCheckinMessage, sendPatientSMS, sendLowRiskCheckin, runSMSCampaign, runLowRiskCheckinCampaign, runReviewRequestCampaign, runReviewFollowupCampaign };

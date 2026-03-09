@@ -12,6 +12,8 @@ const alertRoutes = require('./routes/alerts');
 const settingsRoutes = require('./routes/settings');
 const webhookRoutes = require('./routes/webhooks');
 const messagesRoutes = require('./routes/messages');
+const practicesRoutes = require('./routes/practices');
+const reviewsRoutes = require('./routes/reviews');
 
 const app = express();
 
@@ -44,12 +46,16 @@ app.use('/api/dashboard', auth, dashboardRoutes);
 app.use('/api/alerts', auth, alertRoutes);
 app.use('/api/settings', auth, settingsRoutes);
 app.use('/api/messages', auth, messagesRoutes);
+app.use('/api/practices', auth, practicesRoutes);
+app.use('/api/reviews', auth, reviewsRoutes);
 
 // Confirm key routes are registered
 console.log('[Routes] POST /api/patients/:id/message — registered');
 console.log('[Routes] POST /api/patients/:id/send-checkin — registered');
 console.log('[Routes] GET  /api/dashboard/at-risk — registered');
 console.log('[Routes] GET  /api/messages/sent-this-week — registered');
+console.log('[Routes] PUT  /api/practices/google-review-link — registered');
+console.log('[Routes] GET  /api/reviews/stats — registered');
 
 // 404
 app.use((req, res) => {
