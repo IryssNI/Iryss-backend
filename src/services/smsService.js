@@ -12,28 +12,19 @@ function getClient() {
 
 function buildMessage(patient, practiceName) {
   const firstName = patient.name.split(' ')[0];
-  const isContactLens = patient.patient_type === 'contact_lens';
   const isHigh = patient.risk_status === 'high';
 
-  if (isHigh && isContactLens) {
-    return `Hi ${firstName} 👋\n\nWe just wanted to check in — it's been a little while since your last contact lens order, and we want to make sure you're all set.\n\nWhenever you're ready, just reply to this message and we'll get everything sorted for you.\n\n${practiceName}`;
+  if (isHigh) {
+    return `Hi ${firstName},\n\nIt's been a little while and we've been thinking about you — we just wanted to check in and see how you're doing.\n\nWhenever you're ready, we're here to help with whatever would be most useful — whether that's an updated eye check, a chat about your prescription, or just a general catch-up about your eye health. Absolutely no pressure at all.\n\nJust reply to us here and we'll take it from there 😊\n\n${practiceName}`;
   }
 
-  if (isHigh && !isContactLens) {
-    return `Hi ${firstName} 👋\n\nIt's been a little while since we last saw you, and we just wanted to check in and see how you're doing.\n\nIf you'd like to book in for a check-up, just reply here and we'll get you sorted at a time that suits.\n\n${practiceName}`;
-  }
-
-  if (!isHigh && isContactLens) {
-    return `Hi ${firstName},\n\nIt might be getting close to time for your next contact lens order — just a gentle heads-up from us.\n\nNo rush at all, but whenever you're ready, just reply here and we'll get it sorted 😊\n\n${practiceName}`;
-  }
-
-  // medium, general
-  return `Hi ${firstName},\n\nWe just wanted to check in — it might be worth thinking about booking your next eye test soon.\n\nWhenever suits you, just reply here and we'll find a time that works.\n\n${practiceName}`;
+  // medium risk
+  return `Hi ${firstName},\n\nWe just wanted to check in and see how you're getting on with your latest contact lens order.\n\nIt's always worth having an updated prescription to make sure you're in the right lenses — comfort and clarity can shift gradually and it's easy not to notice.\n\nWe're happy to help you review your lenses or pop in for a quick check-up if that would be useful. No pressure at all — just reply to us here whenever suits you 😊\n\n${practiceName}`;
 }
 
 function buildLowRiskCheckinMessage(patient, practiceName) {
   const firstName = patient.name.split(' ')[0];
-  return `Hi ${firstName} 👋\n\nJust a little hello from everyone at ${practiceName} — we hope you're keeping well.\n\nWe're always here whenever you need anything, whether that's a check-up, a lens reorder, or just a question.\n\nTake care 😊`;
+  return `Hi ${firstName},\n\nWe just wanted to check in and see how you're getting on with your new contact lenses.\n\nHopefully comfort is good and you're happy with how you're seeing. If anything feels slightly off — dryness, blurry vision, any discomfort at all — it's always worth a quick chat and we're here to help.\n\nWe're happy to review your lenses or answer any questions, completely no pressure — just reply to us here anytime 😊\n\n${practiceName}`;
 }
 
 /**
