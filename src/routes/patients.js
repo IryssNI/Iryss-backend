@@ -167,7 +167,7 @@ router.post('/:id/message', async (req, res, next) => {
     const practiceId = req.practice.id;
 
     const patientResult = await db.query(
-      'SELECT id, name, phone, patient_type FROM patients WHERE id = $1 AND practice_id = $2',
+      'SELECT id, name, phone, patient_type, risk_status FROM patients WHERE id = $1 AND practice_id = $2',
       [id, practiceId]
     );
 

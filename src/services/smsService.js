@@ -12,17 +12,28 @@ function getClient() {
 
 function buildMessage(patient, practiceName) {
   const firstName = patient.name.split(' ')[0];
+  const isContactLens = patient.patient_type === 'contact_lens';
+  const isHigh = patient.risk_status === 'high';
 
-  if (patient.patient_type === 'contact_lens') {
-    return `Hi ${firstName}, it's ${practiceName}. We noticed you haven't reordered your contact lenses lately — would you like to? Reply here or give us a call and we'll sort it for you.`;
+  if (isHigh && isContactLens) {
+    return `Hi ${firstName} 👋\n\nWe just wanted to check in — it's been a little while since you last reordered your contact lenses and we want to make sure you're getting on okay.\n\nWhenever you're ready, just reply to this message and we'll get everything sorted for you.\n\n${practiceName}`;
   }
 
-  return `Hi ${firstName}, it's ${practiceName}. We noticed it's been a while since your last visit — would you like to book in? Reply here or give us a call.`;
+  if (isHigh && !isContactLens) {
+    return `Hi ${firstName} 👋\n\nIt's been a little while since we last saw you at ${practiceName}, and we just wanted to check in.\n\nIf you're due a check-up or have any questions about your eyes or glasses, we're always here. Just reply to this message or give us a call.`;
+  }
+
+  if (!isHigh && isContactLens) {
+    return `Hi ${firstName},\n\nJust a gentle heads-up from ${practiceName} — it might be about time to think about reordering your contact lenses.\n\nNo rush at all, but if you'd like us to sort that for you, just reply here and we'll take care of it 😊`;
+  }
+
+  // medium, general
+  return `Hi ${firstName},\n\nJust a friendly note from ${practiceName} — it might be worth thinking about booking a check-up soon.\n\nWhenever suits you, just reply to this message or give us a call and we'll find a time that works.`;
 }
 
 function buildLowRiskCheckinMessage(patient, practiceName) {
   const firstName = patient.name.split(' ')[0];
-  return `Hi ${firstName}! 👋 Just a friendly note from ${practiceName} — we hope you're doing well. It's always worth keeping on top of your eye health, so whenever you're ready to book your next check-up, we're here. Just reply to this message and we'll get you sorted! 😊`;
+  return `Hi ${firstName} 👋\n\nJust a little hello from everyone at ${practiceName} — we hope you're keeping well.\n\nWe're always here if you ever need anything, whether that's a check-up, a lens reorder, or just a question. No pressure at all — just wanted you to know we're thinking of you.`;
 }
 
 /**
@@ -79,7 +90,7 @@ async function runSMSCampaign() {
 
   for (const practice of practicesResult.rows) {
     const patientsResult = await db.query(
-      `SELECT p.id, p.name, p.phone, p.patient_type
+      `SELECT p.id, p.name, p.phone, p.patient_type, p.risk_status
        FROM patients p
        WHERE p.practice_id = $1
          AND p.risk_status IN ('high', 'medium')
