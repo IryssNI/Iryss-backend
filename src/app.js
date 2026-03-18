@@ -45,7 +45,7 @@ app.use('/api/patients', auth, patientRoutes);
 app.use('/api/dashboard', auth, dashboardRoutes);
 app.use('/api/alerts', auth, alertRoutes);
 app.use('/api/settings', auth, settingsRoutes);
-app.use('/api/messages', auth, messagesRoutes);
+app.use('/api/messages', messagesRoutes);
 
 // Public send endpoint (no auth - for dashboard demo)
 const twilio_client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
