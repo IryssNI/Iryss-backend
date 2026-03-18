@@ -131,4 +131,28 @@ router.post('/mark-read', async (req, res, next) => {
   }
 });
 
+
+// POST /api/messages/send
+router.post('/send', async (req, res, next) => {
+  try {
+    const { to, message } = req.body;
+    if (!to || !message) return res.status(400).json({ error: 'to and message required' });
+
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    const from = process.env.TWILIO_PHONE_NUMBER;
+
+    const twilio = require('twilio')(accountSid, authToken);
+    const result = await twilio.messages.create({
+      from: `whatsapp:${from}`,
+      to: `whatsapp:${to}`,
+      body: message
+    });
+
+    res.json({ success: true, sid: result.sid });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
