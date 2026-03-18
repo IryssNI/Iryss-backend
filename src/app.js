@@ -46,6 +46,23 @@ app.use('/api/dashboard', auth, dashboardRoutes);
 app.use('/api/alerts', auth, alertRoutes);
 app.use('/api/settings', auth, settingsRoutes);
 app.use('/api/messages', auth, messagesRoutes);
+
+// Public send endpoint (no auth - for dashboard demo)
+const twilio_client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+app.post('/api/send-whatsapp', async (req, res) => {
+  try {
+    const { to, message } = req.body;
+    if (!to || !message) return res.status(400).json({ error: 'to and message required' });
+    const result = await twilio_client.messages.create({
+      from: 'whatsapp:' + process.env.TWILIO_PHONE_NUMBER,
+      to: 'whatsapp:' + to,
+      body: message
+    });
+    res.json({ success: true, sid: result.sid });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 app.use('/api/practices', auth, practicesRoutes);
 app.use('/api/reviews', auth, reviewsRoutes);
 
