@@ -45,7 +45,25 @@ app.use('/api/patients', auth, patientRoutes);
 app.use('/api/dashboard', auth, dashboardRoutes);
 app.use('/api/alerts', auth, alertRoutes);
 app.use('/api/settings', auth, settingsRoutes);
-app.use('/api/messages', messagesRoutes);
+app.use('/api/messages', auth, messagesRoutes);
+
+// Public inbox endpoint for demo dashboard
+const db = require('./config/database');
+app.get('/api/public/inbox', async (req, res) => {
+  try {
+    const result = await db.query(
+      `SELECT m.id, m.message_body, m.sentiment, m.sent_at, m.direction,
+              p.name AS patient_name, p.phone AS patient_phone
+       FROM messages m
+       JOIN patients p ON p.id = m.patient_id
+       ORDER BY m.sent_at DESC
+       LIMIT 100`
+    );
+    res.json({ messages: result.rows });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Public send endpoint (no auth - for dashboard demo)
 const twilio_client = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
