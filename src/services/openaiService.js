@@ -49,6 +49,113 @@ Respond ONLY with valid JSON in this exact format:
 }
 
 /**
+ * Builds product-specific clinical guidance based on the patient's type/product.
+ */
+function buildProductGuidance(patient) {
+  const product = (patient.patient_type || '').toLowerCase();
+
+  if (/varifocal|progressive/.test(product)) {
+    return `CLINICAL GUIDANCE — VARIFOCALS / PROGRESSIVE LENSES:
+This patient wears varifocal or progressive lenses. Focus your conversation on:
+- Adaptation: ask how they are getting on with the lenses — it can take a few weeks to fully adjust
+- Head positioning: remind them to point their nose at what they want to see clearly, and to look through the correct zone (top for distance, middle for screens, bottom for reading)
+- Comfort at different distances: specifically ask about distance, intermediate (e.g. computer/dashboard), and near (e.g. reading, phone)
+- Swim or distortion: ask if they experience any swimming sensation, distortion at the edges, or difficulty on stairs — this is common during adaptation
+- Cleaning: ask if they are using the right cleaning routine for their lenses
+- When to return: offer an adjustment appointment if they are struggling — small frame or lens adjustments can make a big difference
+- If they have been wearing them more than 4 weeks and still struggling, recommend coming in for a fitting review`;
+  }
+
+  if (/presbyop/.test(product)) {
+    return `CLINICAL GUIDANCE — PRESBYOPIA:
+This patient may have presbyopia (age-related near vision difficulty). Focus your conversation on:
+- Ask if they are finding it harder to read small print, use their phone, or do close work
+- Gently explain that presbyopia is a completely normal age-related change — the lens inside the eye gradually loses flexibility, typically from the mid-40s onwards
+- Discuss options appropriate to their lifestyle:
+  • Reading glasses: simple and affordable for near work only
+  • Varifocals / progressive lenses: correct distance and near in one lens — great for people who don't want to swap glasses
+  • Multifocal contact lenses: excellent options like Dailies Total1 Multifocal or Proclear Multifocal — very natural vision for active people
+- Ask if they already wear distance glasses or contact lenses — this affects the recommendation
+- Offer to book them in for a full eye test and presbyopia consultation`;
+  }
+
+  if (/myop|misight|myopia/.test(product)) {
+    return `CLINICAL GUIDANCE — MYOPIA / MYOPIA MANAGEMENT:
+This patient is associated with myopia care. Focus your conversation on:
+- Ask how their distance vision is — are they finding it harder to see things far away?
+- If the patient mentions a child: switch to a myopia management framing — ask about their child's age, how long they have been short-sighted, whether the prescription is changing, time spent outdoors, and screen time habits
+- Myopia management options to mention naturally:
+  • MiSight 1 day contact lenses: clinically proven to slow myopia progression in children (age 8–15), worn daily — discuss if appropriate
+  • Ortho-K (overnight contact lenses): worn at night, correct vision during the day with no lenses needed, also slows progression
+  • Atropine drops: low-dose eye drops used to slow myopia progression — requires monitoring
+- For adults: discuss standard myopia correction (glasses, daily or monthly contact lenses) and ask about their lifestyle needs
+- Recommend a myopia management consultation if any concern about progression is mentioned`;
+  }
+
+  if (/acuvue|contact|\ cl|daily|monthly/.test(product)) {
+    return `CLINICAL GUIDANCE — CONTACT LENSES:
+This patient wears contact lenses. Focus your conversation on:
+- Comfort: ask how comfortable their lenses are throughout the day — any dryness, grittiness, or irritation?
+- Wearing time: ask how many hours per day they wear their lenses — extended wear can cause dryness
+- End-of-day discomfort: specifically ask if lenses feel uncomfortable by the afternoon or evening — this is very common and often fixable
+- Replacement schedule: confirm they are replacing lenses as instructed (daily vs monthly) and using fresh solution each time
+- Upgrade options to mention if dryness is raised:
+  • Acuvue Oasys Max: excellent all-day comfort, UV protection, ideal for screen users
+  • Dailies Total1: water gradient technology, often the most comfortable lens for dry-eye prone patients
+- If they wear monthly lenses and mention dryness, ask about switching to a daily — better hygiene and comfort
+- If they haven't worn lenses in a while, reassure them that lens technology has improved and offer a trial pair fitting`;
+  }
+
+  if (/dry eye/.test(product)) {
+    return `CLINICAL GUIDANCE — DRY EYE:
+This patient has a dry eye concern. Focus your conversation on:
+- Symptoms: ask about grittiness, burning, stinging, or paradoxical watering (reflex tearing is common in dry eye)
+- Timing: ask if symptoms are worse in the morning (may suggest MGD/blepharitis) or throughout the day (aqueous deficiency more likely)
+- Triggers: ask about screen use, air conditioning, heating, contact lens wear, and any medications they take
+- Treatments to discuss:
+  • Hylo Forte or Hylo-Care drops: preservative-free, long-lasting lubrication
+  • Thealoz Duo: excellent for evaporative dry eye
+  • Warm compresses: 10 minutes daily to unblock meibomian glands — very effective for lid-related dry eye
+  • BlephEx or LipiFlow: in-practice treatments available for more severe cases
+- Recommend booking a dedicated dry eye assessment at the practice — it's much more thorough than a standard eye test and leads to a tailored treatment plan`;
+  }
+
+  if (/glaucoma|iop/.test(product)) {
+    return `CLINICAL GUIDANCE — GLAUCOMA / RAISED IOP:
+This patient is associated with glaucoma or elevated intraocular pressure. Be careful and considered:
+- Always recommend they attend their regular monitoring check — do not let them delay or skip it
+- Ask if they have noticed any changes to their peripheral (side) vision, or any fogginess or haloes around lights
+- Ask if they have had a recent pressure check, and when their next appointment is scheduled
+- If they are using eye drops (e.g. latanoprost, timolol, dorzolamide): ask if they are using them regularly and if they have any issues with them
+- Do not attempt to interpret pressure readings or clinical data — always refer to the optometrist or ophthalmologist
+- If they report any sudden changes in vision, severe eye pain, or nausea with headache — advise them to seek urgent medical attention immediately (this could indicate acute angle closure)`;
+  }
+
+  if (/glasses|spectacles|frames/.test(product)) {
+    return `CLINICAL GUIDANCE — GLASSES / SPECTACLES:
+This patient wears glasses. Focus your conversation on:
+- Vision clarity: ask if their vision feels sharp and comfortable, or if anything seems off
+- Headaches: ask if they get headaches, especially after reading or screen use — often a sign the prescription needs updating
+- Separate reading glasses: ask if they need to take glasses on and off for different distances — if so, varifocals may be worth discussing
+- Lens coatings to mention naturally:
+  • Anti-reflection (AR) coating: reduces glare from screens and headlights — great for drivers and screen users
+  • Blue light filter lenses: may help with digital eye strain and sleep quality for heavy screen users
+  • Photochromic / Transitions lenses: darken outdoors and clear indoors — convenient for people who move between environments
+  • High-index lenses: thinner and lighter for stronger prescriptions
+- Frame fit: ask if their glasses are comfortable and staying in place — offer a free adjustment appointment if not
+- If their last eye test was more than 2 years ago, recommend booking in for a check`;
+  }
+
+  // No known product — ask to understand the patient's needs
+  return `CLINICAL GUIDANCE — UNKNOWN PRODUCT:
+We don't have a specific product or service on file for this patient yet. Start by understanding what brings them to contact us:
+- Greet them warmly using their name
+- Ask what you can help them with today — keep it open and friendly
+- Based on their reply, identify whether they wear glasses, contact lenses, or both, and what their main concern is
+- Then tailor your response using the relevant optical knowledge you have available`;
+}
+
+/**
  * Formats patient data for inclusion in the system prompt.
  */
 function formatPatientContext(patient) {
@@ -95,6 +202,8 @@ async function generateReply(practice, patient, conversationHistory, currentMess
 
 PATIENT RECORD:
 ${formatPatientContext(patient)}
+
+${buildProductGuidance(patient)}
 
 AVAILABLE APPOINTMENT SLOTS:
 Monday to Saturday, 9am–5pm on the hour, for the next 2 weeks from today (${today}).
@@ -213,9 +322,20 @@ Example:
 
 We hope things go really well for you, and if you're ever back in the area or your circumstances change, we'd always love to welcome you back."
 
+URGENT ESCALATION — HIGHEST PRIORITY:
+If the patient mentions ANY of the following, stop everything else and respond with urgency:
+- Sudden vision loss or blurring
+- Flashes of light
+- New floaters (spots, strings, or shadows in vision)
+- Eye pain (especially sudden or severe)
+- A curtain, shadow, or dark area across their vision
+- Severe headache with nausea and eye pain (possible acute glaucoma)
+
+For any of these: immediately tell them this needs urgent attention, that they must contact the practice right away or go to A&E if outside opening hours, and do not attempt to reassure them that it is probably nothing. Do not offer a routine appointment. Express genuine concern and urgency. Always set the sentiment context so the practice is alerted.
+
 PROACTIVE SAFETY RULES:
-- If a patient mentions eye discomfort, redness, pain, or sudden vision changes — advise them to contact the practice promptly or go to A&E if severe. If they wear contact lenses, advise removing them immediately
-- Never diagnose or prescribe — always recommend a professional check-up for anything clinical
+- Never diagnose or prescribe — always recommend a professional examination for anything clinical
+- If a patient mentions eye discomfort, redness, irritation, or gradual vision changes — advise them to contact the practice promptly. If they wear contact lenses, advise removing them immediately and not reinserting until seen by an optician
 
 PROACTIVE BEHAVIOURS:
 - Always try to book the patient in for an eye examination or prescription review
